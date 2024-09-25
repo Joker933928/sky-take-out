@@ -81,11 +81,6 @@ public class EmployeeServiceImpl implements EmployeeService {
         // 对象属性拷贝
         BeanUtils.copyProperties(employeeDTO, employee);
 
-        String username = employeeDTO.getUsername();
-        if (username != employee.getUsername()) {
-
-        }
-
         // 设置账号的状态，默认正常状态 1 表示正常 0 表示锁定
         employee.setStatus(StatusConstant.ENABLE);
 
@@ -141,6 +136,9 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public Employee findById(Long id) {
         Employee employee = employeeMapper.findById(id);
+        if(id == null){
+            throw new RuntimeException("员工不存在");
+        }
         employee.setPassword("****");
         return employee;
     }
