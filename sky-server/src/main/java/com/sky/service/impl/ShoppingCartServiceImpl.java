@@ -103,11 +103,15 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
      */
     @Override
     public void subShoppingCart(ShoppingCartDTO shoppingCartDTO) {
+        // 创建购物车对象
         ShoppingCart shoppingCart = new ShoppingCart();
+        // 拷贝shoppingCartDTO属性给shoppingCart
         BeanUtils.copyProperties(shoppingCartDTO, shoppingCart);
         Long userId = BaseContext.getCurrentId();
+        // 获取用户ID，查询用户购物车
         shoppingCart.setUserId(userId);
         List<ShoppingCart> list = shoppingCartMapper.list(shoppingCart);
+        // 购物车不等于空
         if (list != null && list.size() > 0) {
             shoppingCart = list.get(0);
         }
