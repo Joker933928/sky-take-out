@@ -6,6 +6,7 @@ import com.sky.entity.Dish;
 import com.sky.entity.Setmeal;
 import com.sky.entity.SetmealDish;
 import com.sky.entity.ShoppingCart;
+import com.sky.exception.ShoppingCartBusinessException;
 import com.sky.mapper.DishMapper;
 import com.sky.mapper.SetmealDishMapper;
 import com.sky.mapper.SetmealMapper;
@@ -49,7 +50,7 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
         if (shoppingCarts != null && shoppingCarts.size() > 0) {
             shoppingCart = shoppingCarts.get(0);
             shoppingCart.setNumber(shoppingCart.getNumber() + 1);
-            shoppingCartMapper.update(shoppingCart);
+            shoppingCartMapper.updateNumberById(shoppingCart);
         } else {
             //如果不存在，插入数据，数量就是1
 
@@ -93,7 +94,30 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
     @Override
     public void cleanShoppingCart() {
         shoppingCartMapper.deleteByUserId(BaseContext.getCurrentId());
+    }
 
+    /**
+     * 删除购物车中一个商品
+     *
+     * @param shoppingCartDTO
+     */
+    @Override
+    public void subShoppingCart(ShoppingCartDTO shoppingCartDTO) {
+        ShoppingCart shoppingCart = new ShoppingCart();
+        BeanUtils.copyProperties(shoppingCartDTO, shoppingCart);
+        Long userId = BaseContext.getCurrentId();
+        shoppingCart.setUserId(userId);
+        List<ShoppingCart> list = shoppingCartMapper.list(shoppingCart);
+        if (list != null && list.size() > 0) {
+            shoppingCart = list.get(0);
+        }
 
+        Integer number = shoppingCart.getNumber();
+        if(number == 1){
+            shoppingCartMapper.deleteById(shoppingCart.getId());
+        } else{
+            shoppingCart.setNumber(shoppingCart.getNumber() -1);
+            shoppingCartMapper.updateNumberById(shoppingCart);
+        }
     }
 }
