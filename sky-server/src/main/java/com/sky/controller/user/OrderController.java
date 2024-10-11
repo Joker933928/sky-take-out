@@ -99,6 +99,7 @@ public class OrderController {
 
     /**
      * 再来一单
+     *
      * @param id
      * @return
      */
@@ -108,5 +109,13 @@ public class OrderController {
         orderService.repetitionId(id);
         return Result.success();
     }
+
+    @GetMapping("/reminder/{id}")
+    @ApiOperation("客户催单")
+    public Result reminderId(@PathVariable("id") Long id) {
+        orderService.reminderId(id);
+        return Result.success();
+    }
+
 
 }
