@@ -122,11 +122,16 @@ public class OrderController {
         return Result.success();
     }
 
+    /**
+     * 订单搜索
+     * @param pageQueryDTO
+     * @return
+     */
     @ApiOperation("订单搜索")
     @GetMapping("/conditionSearch")
-    public Result<PageResult> conditionSearch(@RequestParam OrdersPageQueryDTO pageQueryDTO) {
+    public Result<PageResult> conditionSearch(OrdersPageQueryDTO pageQueryDTO) {
         log.info("订单搜索:{}",pageQueryDTO);
-        PageResult pageResult = orderService.PageQuery(pageQueryDTO);
+        PageResult pageResult = orderService.conditionSearch(pageQueryDTO);
         return Result.success(pageResult);
     }
 

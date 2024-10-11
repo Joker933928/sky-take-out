@@ -82,8 +82,31 @@ public interface OrderService {
     void delivery(Long id);
 
     /**
-     * 订单搜索
-     * @param ordersPageQueryDTO
+     * 条件搜索订单
+     * @param pageQueryDTO
+     * @return
      */
-    PageResult PageQuery(OrdersPageQueryDTO pageQueryDTO);
+    PageResult conditionSearch(OrdersPageQueryDTO pageQueryDTO);
+
+    /**
+     * 查询历史订单
+     * @param pageNum
+     * @param pageSize
+     * @param status
+     * @return
+     */
+    PageResult historyOrders(int pageNum, int pageSize, Integer status);
+
+    /**
+     * 查询订单详情
+     * @param id
+     * @return
+     */
+    OrderVO orderDetailId(Long id);
+
+    /**
+     * 根据ID取消订单
+     * @param id
+     */
+    void userCancelById(Long id);
 }
