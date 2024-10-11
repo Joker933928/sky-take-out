@@ -21,13 +21,6 @@ public interface OrderMapper {
      */
     void insert(Orders order);
 
-    /**
-     * 根据订单号查询订单
-     *
-     * @param orderNumber
-     */
-    @Select("select * from orders where number = #{orderNumber}")
-    Orders getByNumber(String orderNumber);
 
     /**
      * 修改订单信息
@@ -52,4 +45,13 @@ public interface OrderMapper {
      */
     @Select("select * from orders where status = #{status} and order_time < #{orderTime}")
     List<Orders> getByStatusAndOrderTimeLT(Integer status, LocalDateTime orderTime);
+
+    /**
+     * 根据订单号和用户id查询订单
+     * @param outTradeNo
+     * @param userId
+     * @return
+     */
+    @Select("select * from orders where number = #{outTradeNo} and user_id = #{userId}")
+    Orders getByNumberAndUserId(String outTradeNo, Long userId);
 }

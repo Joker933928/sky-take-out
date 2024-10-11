@@ -1,5 +1,6 @@
 package com.sky.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
@@ -17,6 +18,7 @@ import com.sky.vo.OrderPaymentVO;
 import com.sky.vo.OrderStatisticsVO;
 import com.sky.vo.OrderSubmitVO;
 import com.sky.vo.OrderVO;
+import com.sky.websocket.WebSocketServer;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.weaver.ast.Or;
 import org.springframework.beans.BeanUtils;
@@ -29,7 +31,9 @@ import org.springframework.util.CollectionUtils;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -52,7 +56,7 @@ public class OrderServiceImpl implements OrderService {
     private UserMapper userMapper;
 
     @Autowired
-    private WeChatPayUtil weChatPayUtil;
+    private WebSocketServer webSocketServer;
 
     /**
      * 用户下单
@@ -163,9 +167,11 @@ public class OrderServiceImpl implements OrderService {
      * @param outTradeNo
      */
     public void paySuccess(String outTradeNo) {
+        //当前登录用户id
+        Long userId = BaseContext.getCurrentId();
 
-        // 根据订单号查询订单
-        Orders ordersDB = orderMapper.getByNumber(outTradeNo);
+        // 根据订单号查询当前用户的订单
+        Orders ordersDB = orderMapper.getByNumberAndUserId(outTradeNo, userId);
 
         // 根据订单id更新订单的状态、支付方式、支付状态、结账时间
         Orders orders = Orders.builder()
@@ -176,6 +182,16 @@ public class OrderServiceImpl implements OrderService {
                 .build();
 
         orderMapper.update(orders);
+
+        // 通过websocket向客户端浏览器推送消息 type orderId content
+        Map map = new HashMap();
+        map.put("type", Orders.PAID);//消息类型，1表示来单提醒
+        map.put("orderId",ordersDB.getId());
+        map.put("content","订单号："+outTradeNo);
+
+        //通过WebSocket实现来单提醒，向客户端浏览器推送消息
+        String json = JSON.toJSONString(map);
+        webSocketServer.sendToAllClient(json);
     }
 
     /**
@@ -188,7 +204,7 @@ public class OrderServiceImpl implements OrderService {
         // 根据id查询订单
         Orders ordersDB = orderMapper.getById(ordersdto.getId());
 
-        if(ordersDB == null || !ordersDB.getStatus().equals(Orders.TO_BE_CONFIRMED)){
+        if (ordersDB == null || !ordersDB.getStatus().equals(Orders.TO_BE_CONFIRMED)) {
             throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
         }
 
@@ -471,13 +487,13 @@ public class OrderServiceImpl implements OrderService {
                 List<OrderDetail> orderDetails = orderDetailMapper.getByOrderId(ordersId);
 
                 OrderVO orderVO = new OrderVO();
-                BeanUtils.copyProperties(orders,orderVO);
+                BeanUtils.copyProperties(orders, orderVO);
                 orderVO.setOrderDetailList(orderDetails);
 
                 list.add(orderVO);
             }
         }
-        return new PageResult(page.getTotal(),list);
+        return new PageResult(page.getTotal(), list);
     }
 
     /**
@@ -512,7 +528,7 @@ public class OrderServiceImpl implements OrderService {
         Orders ordersDB = orderMapper.getById(id);
 
         //订单状态 1待付款 2待接单 3已接单 4派送中 5已完成 6已取消
-        if(ordersDB == null || ordersDB.getStatus() > Orders.TO_BE_CONFIRMED){
+        if (ordersDB == null || ordersDB.getStatus() > Orders.TO_BE_CONFIRMED) {
             throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
         }
 
@@ -520,7 +536,7 @@ public class OrderServiceImpl implements OrderService {
         orders.setId(orders.getId());
 
         // 订单处于待接单状态下取消，需要进行退款
-        if(ordersDB.getStatus().equals(Orders.TO_BE_CONFIRMED)){
+        if (ordersDB.getStatus().equals(Orders.TO_BE_CONFIRMED)) {
 
             //支付状态修改为 退款
             orders.setPayStatus(Orders.REFUND);
@@ -537,6 +553,7 @@ public class OrderServiceImpl implements OrderService {
 
     /**
      * 再来一单
+     *
      * @param id
      */
     @Override
@@ -548,11 +565,11 @@ public class OrderServiceImpl implements OrderService {
         List<OrderDetail> orderDetails = orderDetailMapper.getByOrderId(id);
 
         // 将订单详情对象转换为购物车对象
-        List<ShoppingCart> shoppingCartList = orderDetails.stream().map(x->{
+        List<ShoppingCart> shoppingCartList = orderDetails.stream().map(x -> {
             ShoppingCart shoppingCart = new ShoppingCart();
 
             // 将原订单详情里面的菜品信息重新复制到购物车对象中
-            BeanUtils.copyProperties(x,shoppingCart,"id");
+            BeanUtils.copyProperties(x, shoppingCart, "id");
             shoppingCart.setUserId(userId);
             shoppingCart.setCreateTime(LocalDateTime.now());
 
