@@ -58,6 +58,7 @@ public class OrderController {
 
     /**
      * 历史订单查询
+     *
      * @param page
      * @param pageSize
      * @param status
@@ -72,6 +73,7 @@ public class OrderController {
 
     /**
      * 查询订单详情
+     *
      * @param id
      * @return
      */
@@ -82,12 +84,24 @@ public class OrderController {
         return Result.success(orderVO);
     }
 
+    /**
+     * 取消订单
+     *
+     * @param id
+     * @return
+     */
     @PutMapping("/cancel/{id}")
     @ApiOperation("取消订单")
-    public Result cancel(@PathVariable("id") Long id){
+    public Result cancel(@PathVariable("id") Long id) {
         orderService.userCancelById(id);
         return Result.success();
     }
 
+    @PostMapping("/repetition/{id}")
+    @ApiOperation("再来一单")
+    public Result repetitionId(@PathVariable("id") Long id) {
+        orderService.repetitionId(id);
+        return Result.success();
+    }
 
 }
